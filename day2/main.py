@@ -9,26 +9,50 @@ def read_input(path: str) -> np.ndarray[int]:
     
     return lines
 
-def is_safe(report: list[int]) -> bool:
-    # calculate first difference to determine if values should increase or decrease
-    prev_diff = report[1] - report[0]
+def get_diffs(report: list[int]) -> list[int]:
+    diffs = []
 
-    # if first difference is too big or 0, immediately mark as unsafe
-    if prev_diff == 0 or np.abs(prev_diff) > 3:
-        return False
+    for i in range(1, len(report)):
+        diffs.append(report[i] - report[i-1])
     
-    for i in range(len(report)):
-        if i == 0 or i == len(report) - 1:
-            continue
+    return diffs
 
-        diff = report[i+1] - report[i]
+def is_increasing(diffs: list[int]) -> bool:
+    inc = 0
 
-        if not (np.sign(diff) == np.sign(prev_diff)):
+    for d in diffs:
+        inc += np.sign(d)
+    
+    return inc > 0
+
+
+def is_safe_without(index: int, report: list[int]) -> bool:
+    values = report * 1
+    del values[index]
+    # print(values)
+    diffs = get_diffs(values)
+    sign = 1 if is_increasing(diffs) else -1
+
+    for d in diffs:
+        if (not np.sign(d) == sign) or np.abs(d) <= 0 or np.abs(d) > 3:
             return False
-        if diff == 0 or np.abs(diff) > 3:
-            return False
+    return True
 
-        prev_diff = diff
+def is_safe_with_dampener(report: list[int]) -> bool:
+    diffs = get_diffs(report)
+    sign = 1 if is_increasing(diffs) else -1
+
+    print("======")
+    print(report)
+    print(diffs)
+    print(sign)
+
+    for d in diffs:
+        if (not np.sign(d) == sign) or np.abs(d) <= 0 or np.abs(d) > 3:
+            for i in range(len(report)):
+                if is_safe_without(i, report):
+                    return True
+            return False
     
     return True
 
@@ -37,7 +61,7 @@ if __name__ == '__main__':
     safe_reports = 0
     
     for r in reports:
-        if is_safe(r):
+        if is_safe_with_dampener(r):
             safe_reports += 1
 
     print(f"Result part 1: {safe_reports}")
